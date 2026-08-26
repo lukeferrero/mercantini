@@ -1,0 +1,21 @@
+<%- include('../partials/header', { title: 'Progetti', user }) %>
+
+<h1>Progetti</h1>
+
+<% projects.forEach(p => { %>
+<div class="card">
+  <h2><%= p.name %></h2>
+  <table>
+    <thead><tr><th>Unità</th><th>mq</th></tr></thead>
+    <tbody>
+      <% unitsByProject[p.id].forEach(u => { %>
+      <tr><td><a href="/app/units/<%= u.id %>"><%= u.name %></a></td><td><%= u.mq || '-' %></td></tr>
+      <% }) %>
+      <% if (unitsByProject[p.id].length === 0) { %><tr><td colspan="2">Nessuna unità.</td></tr><% } %>
+    </tbody>
+  </table>
+</div>
+<% }) %>
+<% if (projects.length === 0) { %><p>Nessun progetto disponibile.</p><% } %>
+
+<%- include('../partials/footer') %>

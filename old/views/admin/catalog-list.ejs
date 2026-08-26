@@ -1,0 +1,15 @@
+<%- include('../partials/header', { title: 'Catalogo opzioni', user: typeof user !== 'undefined' ? user : null }) %>
+
+<p><a href="/admin">&larr; Backend</a></p>
+<h1>Catalogo opzioni</h1>
+<p>Per ogni voce definisci fino a 10 opzioni selezionabili dal frontend, ciascuna con una foto.</p>
+
+<div class="card">
+  <div class="options-grid">
+    <% items.forEach(item => { %>
+      <a class="option-card" href="/admin/catalog/<%= item.type %>"><%= item.label %></a>
+    <% }) %>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>

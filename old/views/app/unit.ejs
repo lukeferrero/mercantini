@@ -1,0 +1,51 @@
+<%- include('../partials/header', { title: unit.name, user }) %>
+
+<p><a href="/app">&larr; Progetti</a></p>
+<h1><%= unit.name %></h1>
+
+<div class="card">
+  <h2>Caratteristiche unità</h2>
+  <table>
+    <tr><td>mq</td><td><%= unit.mq || '-' %></td></tr>
+    <tr>
+      <td>Portoncino blindato</td>
+      <td>
+        <% if (portoncinoOption) { %>
+          <div class="option-pick-row selected-only">
+            <% if (portoncinoOption.photo_path) { %><img class="option-thumb" src="<%= portoncinoOption.photo_path %>" alt=""><% } %>
+            <span><%= portoncinoOption.label %></span>
+          </div>
+        <% } else { %>-<% } %>
+      </td>
+    </tr>
+    <tr><td>Spioncino</td><td><%= unit.portoncino_spioncino || '-' %></td></tr>
+    <tr><td>Colore portoncino</td><td><%= unit.portoncino_colore || '-' %></td></tr>
+    <tr>
+      <td>Maniglie</td>
+      <td>
+        <% if (manigliaOption) { %>
+          <div class="option-pick-row selected-only">
+            <% if (manigliaOption.photo_path) { %><img class="option-thumb" src="<%= manigliaOption.photo_path %>" alt=""><% } %>
+            <span><%= manigliaOption.label %></span>
+          </div>
+        <% } else { %>-<% } %>
+      </td>
+    </tr>
+    <tr><td>Quadro elettrico - note</td><td><%= unit.quadro_elettrico_note || '-' %></td></tr>
+  </table>
+</div>
+
+<div class="card">
+  <h2>Stanze</h2>
+  <table>
+    <thead><tr><th>Nome</th><th>Tipo</th></tr></thead>
+    <tbody>
+      <% rooms.forEach(r => { %>
+      <tr><td><a href="/app/rooms/<%= r.id %>"><%= r.name %></a></td><td><span class="badge"><%= r.room_type %></span></td></tr>
+      <% }) %>
+      <% if (rooms.length === 0) { %><tr><td colspan="2">Nessuna stanza.</td></tr><% } %>
+    </tbody>
+  </table>
+</div>
+
+<%- include('../partials/footer') %>

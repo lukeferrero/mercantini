@@ -1,0 +1,39 @@
+<%- include('../partials/header', { title: project.name, user: typeof user !== 'undefined' ? user : null }) %>
+
+<p><a href="/admin">&larr; Progetti</a></p>
+<h1><%= project.name %></h1>
+<p class="badge"><%= units.length %> / <%= project.units_count %> unità inserite</p>
+
+<div class="card">
+  <h2>Nuova unità immobiliare</h2>
+  <form method="POST" action="/admin/projects/<%= project.id %>/units">
+    <div class="form-row inline">
+      <input type="text" name="name" placeholder="Nome unità (es. Appartamento 3)" required style="flex:2">
+      <input type="number" step="0.01" name="mq" placeholder="mq" style="flex:1">
+      <button class="btn" type="submit">Aggiungi</button>
+    </div>
+  </form>
+</div>
+
+<div class="card">
+  <h2>Unità</h2>
+  <table>
+    <thead><tr><th>Nome</th><th>mq</th><th></th></tr></thead>
+    <tbody>
+      <% units.forEach(u => { %>
+      <tr>
+        <td><a href="/admin/units/<%= u.id %>"><%= u.name %></a></td>
+        <td><%= u.mq || '-' %></td>
+        <td>
+          <form method="POST" action="/admin/units/<%= u.id %>/delete" onsubmit="return confirm('Eliminare questa unità?')" style="display:inline">
+            <button class="btn danger" style="padding:4px 10px;font-size:12px;">Elimina</button>
+          </form>
+        </td>
+      </tr>
+      <% }) %>
+      <% if (units.length === 0) { %><tr><td colspan="3">Nessuna unità ancora.</td></tr><% } %>
+    </tbody>
+  </table>
+</div>
+
+<%- include('../partials/footer') %>

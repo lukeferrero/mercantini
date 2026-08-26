@@ -1,0 +1,36 @@
+<%- include('../partials/header', { title: 'Backend - Progetti', user }) %>
+
+<div class="card">
+  <h2>Nuovo progetto</h2>
+  <form method="POST" action="/admin/projects">
+    <div class="form-row inline">
+      <input type="text" name="name" placeholder="Nome progetto" required style="flex:2">
+      <input type="number" name="units_count" placeholder="N. unità" min="0" style="flex:1">
+      <button class="btn" type="submit">Crea</button>
+    </div>
+  </form>
+</div>
+
+<div class="card">
+  <h2>Progetti</h2>
+  <table>
+    <thead><tr><th>Nome</th><th>Unità previste</th><th>Creato</th><th></th></tr></thead>
+    <tbody>
+      <% projects.forEach(p => { %>
+      <tr>
+        <td><a href="/admin/projects/<%= p.id %>"><%= p.name %></a></td>
+        <td><%= p.units_count %></td>
+        <td><%= p.created_at %></td>
+        <td>
+          <form method="POST" action="/admin/projects/<%= p.id %>/delete" onsubmit="return confirm('Eliminare il progetto e tutte le sue unità?')" style="display:inline">
+            <button class="btn danger" style="padding:4px 10px;font-size:12px;">Elimina</button>
+          </form>
+        </td>
+      </tr>
+      <% }) %>
+      <% if (projects.length === 0) { %><tr><td colspan="4">Nessun progetto ancora.</td></tr><% } %>
+    </tbody>
+  </table>
+</div>
+
+<%- include('../partials/footer') %>

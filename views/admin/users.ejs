@@ -1,0 +1,43 @@
+<%- include('../partials/header', { title: 'Utenti', user: typeof user !== 'undefined' ? user : null }) %>
+
+<p><a href="/admin">&larr; Backend</a></p>
+<h1>Utenti</h1>
+<p><em>Il frontend in sola lettura (/app) è visibile pubblicamente senza login. Solo admin ed editor possono accedere qui e modificare i campi.</em></p>
+
+<div class="card">
+  <h2>Nuovo utente</h2>
+  <form method="POST" action="/admin/users">
+    <div class="form-row inline">
+      <input type="text" name="name" placeholder="Nome" required style="flex:1">
+      <input type="email" name="email" placeholder="Email" required style="flex:1">
+      <input type="password" name="password" placeholder="Password" required style="flex:1">
+      <select name="role" style="flex:1">
+        <option value="admin">Admin</option>
+        <option value="editor" selected>Editor</option>
+      </select>
+      <button class="btn" type="submit">Crea</button>
+    </div>
+  </form>
+</div>
+
+<div class="card">
+  <table>
+    <thead><tr><th>Nome</th><th>Email</th><th>Ruolo</th><th></th></tr></thead>
+    <tbody>
+      <% users.forEach(u => { %>
+      <tr>
+        <td><%= u.name %></td>
+        <td><%= u.email %></td>
+        <td><span class="badge"><%= u.role %></span></td>
+        <td>
+          <form method="POST" action="/admin/users/<%= u.id %>/delete" onsubmit="return confirm('Eliminare questo utente?')" style="display:inline">
+            <button class="btn danger" style="padding:4px 10px;font-size:12px;">Elimina</button>
+          </form>
+        </td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</div>
+
+<%- include('../partials/footer') %>

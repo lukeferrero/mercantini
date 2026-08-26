@@ -1,0 +1,185 @@
+<%
+function escapeHtml(str) {
+  return String(str == null ? '' : str)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+// Renderizza un blocco note: textarea autosize se modificabile, testo pieno (non troncato) se sola lettura.
+function noteHtml(value, canEdit, inputName, placeholder) {
+  if (canEdit) {
+    return `<textarea class="autosize" name="${inputName}" placeholder="${escapeHtml(placeholder || 'Note')}">${escapeHtml(value)}</textarea>`;
+  }
+  if (!value) return '';
+  return `<div class="note-display">${escapeHtml(value)}</div>`;
+}
+
+// Renderizza il selettore di un'opzione di catalogo: griglia di card con immagine a fianco del nome
+// (modificabile), oppure solo il valore scelto con la sua immagine (sola lettura).
+function pickerHtml(options, value, canEdit, inputName, optional) {
+  let allOptions = (options || []).map(o => ({ id: o.id, label: o.label, photo_path: o.photo_path }));
+  if (optional) allOptions = [{ id: '__none__', label: 'Non presente', photo_path: null }, ...allOptions];
+
+  if (!canEdit) {
+    const selected = allOptions.find(o => String(o.id) === String(value));
+    if (!selected) return '<p class="muted">Non specificato</p>';
+    let html = '<div class="option-pick-row selected-only">';
+    if (selected.photo_path) html += `<img class="option-thumb" src="${selected.photo_path}" alt="">`;
+    html += `<span>${escapeHtml(selected.label)}</span></div>`;
+    return html;
+  }
+
+  if (allOptions.length === (optional ? 1 : 0)) {
+    return '<p class="muted">Nessuna opzione configurata in questo momento (backend &rarr; Catalogo).</p>' +
+      `<input type="hidden" name="${inputName}" value="${escapeHtml(value)}">`;
+  }
+
+  let html = `<div class="option-picker" data-input-name="${inputName}">`;
+  allOptions.forEach(o => {
+    const isSelected = String(value) === String(o.id);
+    html += `<div class="option-pick-card${isSelected ? ' selected' : ''}" data-value="${escapeHtml(o.id)}">`;
+    html += o.photo_path ? `<img class="option-thumb" src="${o.photo_path}" alt="">` : `<div class="option-thumb placeholder">–</div>`;
+    html += `<span>${escapeHtml(o.label)}</span></div>`;
+  });
+  html += `<input type="hidden" name="${inputName}" value="${escapeHtml(value)}"></div>`;
+  return html;
+}
+%>
+<%- include('../partials/header', { title: room.name, user }) %>
+
+<p><a href="/app/units/<%= room.unit_id %>">&larr; Torna all'unità</a></p>
+<h1><%= room.name %> <span class="badge"><%= room.room_type %></span></h1>
+<% if (!canEdit) { %><p><em>Stai visualizzando in sola lettura. <a href="/login">Accedi</a> per modificare.</em></p><% } %>
+
+<form id="room-form">
+  <% fields.forEach(f => {
+       const val = savedValues[f.key];
+       const atts = attachmentsByField[f.key] || [];
+  %>
+  <div class="field-group" data-key="<%= f.key %>" data-type="<%= f.type %>">
+    <h4><%= f.label %></h4>
+
+    <% if (f.type === 'catalog_select' || f.type === 'catalog_select_optional') { %>
+      <%- pickerHtml(f.options, val, canEdit, 'f_' + f.key, f.type === 'catalog_select_optional') %>
+
+    <% } else if (f.type === 'catalog_select_note') { %>
+      <%- pickerHtml(f.options, val && val.value, canEdit, 'f_' + f.key + '__value', false) %>
+      <%- noteHtml(val && val.note, canEdit, 'f_' + f.key + '__note', 'Note') %>
+
+    <% } else if (f.type === 'catalog_select_color_note') { %>
+      <%- pickerHtml(f.options, val && val.value, canEdit, 'f_' + f.key + '__value', false) %>
+      <% if (canEdit) { %>
+        <div class="form-row" style="margin-top:8px;">
+          <input type="text" name="f_<%= f.key %>__colore" placeholder="Colore" value="<%= (val && val.colore) || '' %>">
+        </div>
+      <% } else if (val && val.colore) { %>
+        <p><strong>Colore:</strong> <%= val.colore %></p>
+      <% } %>
+      <%- noteHtml(val && val.note, canEdit, 'f_' + f.key + '__note', 'Note') %>
+
+    <% } else if (f.type === 'number') { %>
+      <% if (canEdit) { %>
+        <input type="number" step="0.01" name="f_<%= f.key %>" value="<%= val || '' %>">
+        <% if (f.unit) { %><small><%= f.unit %></small><% } %>
+      <% } else { %>
+        <p><%= val ? val + (f.unit ? ' ' + f.unit : '') : '—' %></p>
+      <% } %>
+
+    <% } else if (f.type === 'boolean') { %>
+      <% if (canEdit) { %>
+        <select name="f_<%= f.key %>">
+          <option value="">-</option>
+          <option value="si" <%= val === 'si' ? 'selected' : '' %>>Sì</option>
+          <option value="no" <%= val === 'no' ? 'selected' : '' %>>No</option>
+        </select>
+      <% } else { %>
+        <p><%= val === 'si' ? 'Sì' : (val === 'no' ? 'No' : '—') %></p>
+      <% } %>
+
+    <% } else if (f.type === 'text') { %>
+      <% if (canEdit) { %>
+        <input type="text" name="f_<%= f.key %>" value="<%= val || '' %>">
+      <% } else { %>
+        <p><%= val || '—' %></p>
+      <% } %>
+
+    <% } else if (f.type === 'text_note') { %>
+      <% if (canEdit) { %>
+        <input type="text" name="f_<%= f.key %>__tipo" placeholder="Tipo" value="<%= (val && val.tipo) || '' %>" style="margin-bottom:8px;">
+      <% } else if (val && val.tipo) { %>
+        <p><%= val.tipo %></p>
+      <% } %>
+      <%- noteHtml(val && val.note, canEdit, 'f_' + f.key + '__note', 'Note') %>
+
+    <% } else if (f.type === 'text_note_pdf') { %>
+      <% if (canEdit) { %>
+        <input type="text" name="f_<%= f.key %>__tipo" placeholder="Tipo" value="<%= (val && val.tipo) || '' %>" style="margin-bottom:8px;">
+      <% } else if (val && val.tipo) { %>
+        <p><%= val.tipo %></p>
+      <% } %>
+      <%- noteHtml(val && val.note, canEdit, 'f_' + f.key + '__note', 'Note') %>
+      <% if (canEdit) { %><input type="file" accept="application/pdf" class="single-upload" data-key="<%= f.key %>" data-kind="pdf" style="margin-top:6px;"><% } %>
+
+    <% } else if (f.type === 'notes') { %>
+      <%- noteHtml(val, canEdit, 'f_' + f.key, 'Note') %>
+
+    <% } else if (f.type === 'note_pdf') { %>
+      <%- noteHtml(val && val.note, canEdit, 'f_' + f.key + '__note', 'Note') %>
+      <% if (canEdit) { %><input type="file" accept="application/pdf" class="single-upload" data-key="<%= f.key %>" data-kind="pdf" style="margin-top:6px;"><% } %>
+
+    <% } else if (f.type === 'bool_note_pdf') { %>
+      <% if (canEdit) { %>
+        <select name="f_<%= f.key %>__value" style="margin-bottom:8px;">
+          <option value="">-</option>
+          <option value="si" <%= val && val.value === 'si' ? 'selected' : '' %>>Sì</option>
+          <option value="no" <%= val && val.value === 'no' ? 'selected' : '' %>>No</option>
+        </select>
+      <% } else { %>
+        <p><%= (val && val.value === 'si') ? 'Sì' : ((val && val.value === 'no') ? 'No' : '—') %></p>
+      <% } %>
+      <%- noteHtml(val && val.note, canEdit, 'f_' + f.key + '__note', 'Note') %>
+      <% if (canEdit) { %><input type="file" accept="application/pdf" class="single-upload" data-key="<%= f.key %>" data-kind="pdf" style="margin-top:6px;"><% } %>
+
+    <% } else if (f.type === 'count_or_none_pdf') { %>
+      <% if (canEdit) { %>
+        <input type="text" name="f_<%= f.key %>__value" placeholder="Numero o 'non presente'" value="<%= (val && val.value) || '' %>">
+      <% } else { %>
+        <p><%= (val && val.value) || '—' %></p>
+      <% } %>
+      <% if (canEdit) { %><input type="file" accept="application/pdf" class="single-upload" data-key="<%= f.key %>" data-kind="pdf" style="margin-top:6px;"><% } %>
+
+    <% } else if (f.type === 'attachments') { %>
+      <% if (canEdit) { %>
+        <input type="file" multiple class="multi-upload" data-key="<%= f.key %>" data-kind="file">
+      <% } %>
+    <% } %>
+
+    <% if (atts.length > 0) { %>
+      <div class="attachments-list">
+        <% atts.forEach(a => { %>
+          <div class="attachment-row">
+            <a href="<%= a.file_path %>" download="<%= a.original_name %>" class="badge">📎 <%= a.original_name %></a>
+            <% if (canEdit) { %>
+              <button type="button" class="attachment-delete" data-attachment-id="<%= a.id %>" title="Elimina allegato">✕</button>
+            <% } %>
+          </div>
+        <% }) %>
+      </div>
+    <% } %>
+    <% if (atts.length === 0 && f.type === 'attachments' && !canEdit) { %>
+      <p class="muted">Nessun allegato.</p>
+    <% } %>
+  </div>
+  <% }) %>
+
+  <% if (canEdit) { %>
+    <button type="submit" class="btn">Salva tutto</button>
+    <span class="save-status" id="save-status"></span>
+  <% } %>
+</form>
+
+<script>
+  window.ROOM_ID = <%= room.id %>;
+</script>
+<script src="/js/room-form.js"></script>
+
+<%- include('../partials/footer') %>
