@@ -20,10 +20,10 @@
       <% roomTypes.forEach(rt => { %>
       <tr>
         <td><%= rt.label %></td>
-        <td><span class="badge"><%= rt.key %></span></td>
+        <td><span class="badge"><%= rt.slug %></span></td>
         <td>
-          <a href="/admin/room-types/<%= rt.key %>/fields" class="btn secondary" style="padding:4px 10px;font-size:12px;">Campi</a>
-          <form method="POST" action="/admin/room-types/<%= rt.key %>/delete" onsubmit="return confirm('Eliminare questo tipo di stanza? Deve non essere usato da nessuna stanza esistente.')" style="display:inline">
+          <a href="/admin/room-types/<%= rt.slug %>/fields" class="btn secondary" style="padding:4px 10px;font-size:12px;">Campi</a>
+          <form method="POST" action="/admin/room-types/<%= rt.slug %>/delete" onsubmit="return confirm('Eliminare questo tipo di stanza? Deve non essere usato da nessuna stanza esistente.')" style="display:inline">
             <button class="btn danger" style="padding:4px 10px;font-size:12px;">Elimina</button>
           </form>
         </td>

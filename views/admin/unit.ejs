@@ -44,7 +44,7 @@
       <select name="room_type" required style="flex:1">
         <option value="">Tipo stanza</option>
         <% roomTypes.forEach(rt => { %>
-          <option value="<%= rt.key %>"><%= rt.label %></option>
+          <option value="<%= rt.slug %>"><%= rt.label %></option>
         <% }) %>
       </select>
       <button class="btn" type="submit">Aggiungi</button>

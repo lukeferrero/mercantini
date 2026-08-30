@@ -49,7 +49,7 @@
       <% fields.forEach(f => { %>
       <tr>
         <td><%= f.label %></td>
-        <td><span class="badge"><%= f.key %></span></td>
+        <td><span class="badge"><%= f.slug %></span></td>
         <td><%= (fieldTypes.find(t => t.value === f.field_type) || {}).label || f.field_type %></td>
         <td><%= f.catalog_type || '-' %></td>
         <td>
