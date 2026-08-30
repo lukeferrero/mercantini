@@ -5,34 +5,9 @@
 
 <div class="card">
   <h2>Caratteristiche unità</h2>
-  <table>
-    <tr><td>mq</td><td><%= unit.mq || '-' %></td></tr>
-    <tr>
-      <td>Portoncino blindato</td>
-      <td>
-        <% if (portoncinoOption) { %>
-          <div class="option-pick-row selected-only">
-            <% if (portoncinoOption.photo_path) { %><img class="option-thumb" src="<%= portoncinoOption.photo_path %>" alt=""><% } %>
-            <span><%= portoncinoOption.label %></span>
-          </div>
-        <% } else { %>-<% } %>
-      </td>
-    </tr>
-    <tr><td>Spioncino</td><td><%= unit.portoncino_spioncino || '-' %></td></tr>
-    <tr><td>Colore portoncino</td><td><%= unit.portoncino_colore || '-' %></td></tr>
-    <tr>
-      <td>Maniglie</td>
-      <td>
-        <% if (manigliaOption) { %>
-          <div class="option-pick-row selected-only">
-            <% if (manigliaOption.photo_path) { %><img class="option-thumb" src="<%= manigliaOption.photo_path %>" alt=""><% } %>
-            <span><%= manigliaOption.label %></span>
-          </div>
-        <% } else { %>-<% } %>
-      </td>
-    </tr>
-    <tr><td>Quadro elettrico - note</td><td><%= unit.quadro_elettrico_note || '-' %></td></tr>
-  </table>
+  <p><strong>mq:</strong> <%= unit.mq || '-' %></p>
+  <%- include('../partials/dynamic-fields', { fields, savedValues, attachmentsByField, canEdit: false }) %>
+  <% if (fields.length === 0) { %><p class="muted">Nessuna caratteristica configurata.</p><% } %>
 </div>
 
 <div class="card">

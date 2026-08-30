@@ -4,52 +4,35 @@
 <h1><%= unit.name %></h1>
 
 <div class="card">
-  <h2>Caratteristiche unità</h2>
+  <h2>Dati generali</h2>
   <form method="POST" action="/admin/units/<%= unit.id %>">
     <div class="form-row inline">
       <div style="flex:2"><label>Nome</label><input type="text" name="name" value="<%= unit.name %>" required></div>
       <div style="flex:1"><label>mq</label><input type="number" step="0.01" name="mq" value="<%= unit.mq || '' %>"></div>
     </div>
-    <div class="form-row inline">
-      <div style="flex:1">
-        <label>Portoncino blindato</label>
-        <select name="portoncino_tipo">
-          <option value="">-- seleziona --</option>
-          <% portoncinoOptions.forEach(o => { %>
-            <option value="<%= o.id %>" <%= String(unit.portoncino_tipo) === String(o.id) ? 'selected' : '' %>><%= o.label %></option>
-          <% }) %>
-        </select>
-        <% if (portoncinoOptions.length === 0) { %>
-          <small><a href="/admin/catalog/portoncino_blindato">Aggiungi opzioni in Catalogo &rarr;</a></small>
-        <% } %>
-      </div>
-      <div style="flex:1"><label>Spioncino</label>
-        <select name="portoncino_spioncino">
-          <option value="" <%= !unit.portoncino_spioncino ? 'selected' : '' %>>-</option>
-          <option value="si" <%= unit.portoncino_spioncino === 'si' ? 'selected' : '' %>>Sì</option>
-          <option value="no" <%= unit.portoncino_spioncino === 'no' ? 'selected' : '' %>>No</option>
-        </select>
-      </div>
-      <div style="flex:1"><label>Colore portoncino</label><input type="text" name="portoncino_colore" value="<%= unit.portoncino_colore || '' %>"></div>
-    </div>
-    <div class="form-row">
-      <label>Maniglie</label>
-      <select name="maniglie_tipo">
-        <option value="">-- seleziona --</option>
-        <% manigliaOptions.forEach(o => { %>
-          <option value="<%= o.id %>" <%= String(unit.maniglie_tipo) === String(o.id) ? 'selected' : '' %>><%= o.label %></option>
-        <% }) %>
-      </select>
-      <% if (manigliaOptions.length === 0) { %>
-        <small><a href="/admin/catalog/maniglie">Aggiungi opzioni in Catalogo &rarr;</a></small>
-      <% } %>
-    </div>
-    <div class="form-row">
-      <label>Quadro elettrico - note</label>
-      <textarea name="quadro_elettrico_note"><%= unit.quadro_elettrico_note || '' %></textarea>
-    </div>
     <button class="btn" type="submit">Salva</button>
   </form>
+</div>
+
+<div class="card">
+  <h2>Caratteristiche unità</h2>
+  <p><a href="/admin/unit-fields">Gestisci i campi disponibili &rarr;</a></p>
+
+  <% if (fields.length === 0) { %>
+    <p class="muted">Nessuna caratteristica configurata ancora. <a href="/admin/unit-fields">Aggiungine una</a>.</p>
+  <% } else { %>
+    <form id="dynamic-form">
+      <%- include('../partials/dynamic-fields', { fields, savedValues, attachmentsByField, canEdit: true }) %>
+      <button type="submit" class="btn">Salva caratteristiche</button>
+      <span class="save-status" id="save-status"></span>
+    </form>
+    <script>
+      window.SAVE_URL = '/admin/units/<%= unit.id %>/fields';
+      window.UPLOAD_URL = '/admin/units/<%= unit.id %>/upload';
+      window.DELETE_ATTACHMENT_URL_BASE = '/admin/units/<%= unit.id %>/attachments';
+    </script>
+    <script src="/js/dynamic-fields.js"></script>
+  <% } %>
 </div>
 
 <div class="card">
@@ -59,16 +42,14 @@
       <input type="text" name="name" placeholder="Nome stanza (es. Bagno principale)" required style="flex:2">
       <select name="room_type" required style="flex:1">
         <option value="">Tipo stanza</option>
-        <option value="bagno">Bagno</option>
-        <option value="soggiorno">Soggiorno</option>
-        <option value="ingresso">Ingresso</option>
-        <option value="letto">Camera da letto</option>
-        <option value="cucina">Cucina</option>
-        <option value="altro">Altro</option>
+        <% roomTypes.forEach(rt => { %>
+          <option value="<%= rt.key %>"><%= rt.label %></option>
+        <% }) %>
       </select>
       <button class="btn" type="submit">Aggiungi</button>
     </div>
   </form>
+  <p><a href="/admin/room-types">Gestisci tipi di stanza &rarr;</a></p>
 </div>
 
 <div class="card">

@@ -5,10 +5,22 @@
 <p>Per ogni voce definisci fino a 10 opzioni selezionabili dal frontend, ciascuna con una foto.</p>
 
 <div class="card">
+  <h2>Nuova voce di catalogo</h2>
+  <form method="POST" action="/admin/catalog">
+    <div class="form-row inline">
+      <input type="text" name="label" placeholder="es. Prese elettriche" required style="flex:2">
+      <button class="btn" type="submit">Crea</button>
+    </div>
+  </form>
+  <p class="muted" style="margin-top:8px;font-size:13px;">Di solito non serve crearle qui: quando aggiungi un campo di tipo "Selezione da catalogo" in <a href="/admin/room-types">Tipi di stanza</a> o <a href="/admin/unit-fields">Caratteristiche unità</a>, puoi crearne una al volo.</p>
+</div>
+
+<div class="card">
   <div class="options-grid">
     <% items.forEach(item => { %>
       <a class="option-card" href="/admin/catalog/<%= item.type %>"><%= item.label %></a>
     <% }) %>
+    <% if (items.length === 0) { %><p>Nessuna voce di catalogo ancora.</p><% } %>
   </div>
 </div>
 

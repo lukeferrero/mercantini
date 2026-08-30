@@ -22,9 +22,13 @@
     <% options.forEach(o => { %>
       <div class="option-card">
         <% if (o.photo_path) { %><img class="option-thumb" src="<%= o.photo_path %>" alt="<%= o.label %>"><% } %>
-        <div><%= o.label %></div>
+        <form method="POST" action="/admin/catalog/options/<%= o.id %>" enctype="multipart/form-data" style="margin-top:6px;">
+          <input type="text" name="label" value="<%= o.label %>" style="margin-bottom:6px;font-size:13px;padding:5px 8px;">
+          <input type="file" name="photo" accept="image/*" style="margin-bottom:6px;font-size:12px;">
+          <button class="btn secondary" type="submit" style="padding:3px 8px;font-size:11px;width:100%;">Salva modifiche</button>
+        </form>
         <form method="POST" action="/admin/catalog/options/<%= o.id %>/delete" onsubmit="return confirm('Eliminare questa opzione?')">
-          <button class="btn danger" style="padding:3px 8px;font-size:11px;margin-top:6px;">Elimina</button>
+          <button class="btn danger" style="padding:3px 8px;font-size:11px;margin-top:6px;width:100%;">Elimina</button>
         </form>
       </div>
     <% }) %>

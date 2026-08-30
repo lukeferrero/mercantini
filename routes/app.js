@@ -3,8 +3,7 @@ const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
 const db = require('../db/init');
-const ROOM_FIELDS = require('../config/roomFields');
-const CATALOG_ITEMS = require('../config/itemCatalog');
+const { getRoomFields, getUnitFields, loadSavedValues, loadAttachmentsByField } = require('../services/fields');
 const { requireWrite } = require('../middleware/auth');
 
 const router = express.Router();
@@ -22,10 +21,6 @@ const upload = multer({
   limits: { fileSize: 20 * 1024 * 1024 },
 });
 
-function catalogOptionsFor(catalogType) {
-  return db.prepare('SELECT * FROM catalog_options WHERE catalog_type = ? ORDER BY sort_order, id').all(catalogType);
-}
-
 // ---------- Lista progetti / unità ----------
 router.get('/', (req, res) => {
   const projects = db.prepare('SELECT * FROM projects ORDER BY created_at DESC').all();
@@ -42,14 +37,11 @@ router.get('/units/:id', (req, res) => {
   if (!unit) return res.status(404).render('error', { message: 'Unità non trovata' });
   const rooms = db.prepare('SELECT * FROM rooms WHERE unit_id = ? ORDER BY id').all(unit.id);
 
-  const portoncinoOption = unit.portoncino_tipo
-    ? db.prepare('SELECT * FROM catalog_options WHERE catalog_type = ? AND id = ?').get('portoncino_blindato', unit.portoncino_tipo)
-    : null;
-  const manigliaOption = unit.maniglie_tipo
-    ? db.prepare('SELECT * FROM catalog_options WHERE catalog_type = ? AND id = ?').get('maniglie', unit.maniglie_tipo)
-    : null;
+  const fields = getUnitFields(db);
+  const savedValues = loadSavedValues(db, 'unit_fields', 'unit_id', unit.id);
+  const attachmentsByField = loadAttachmentsByField(db, 'unit_id', unit.id);
 
-  res.render('app/unit', { unit, rooms, portoncinoOption, manigliaOption, user: req.session.user || null });
+  res.render('app/unit', { unit, rooms, fields, savedValues, attachmentsByField, user: req.session.user || null });
 });
 
 // ---------- Dettaglio stanza (form dinamico) ----------
@@ -57,24 +49,9 @@ router.get('/rooms/:id', (req, res) => {
   const room = db.prepare('SELECT * FROM rooms WHERE id = ?').get(req.params.id);
   if (!room) return res.status(404).render('error', { message: 'Stanza non trovata' });
 
-  const fieldDefs = ROOM_FIELDS[room.room_type] || [];
-  const savedRows = db.prepare('SELECT field_key, value FROM room_fields WHERE room_id = ?').all(room.id);
-  const savedValues = {};
-  for (const row of savedRows) {
-    try { savedValues[row.field_key] = JSON.parse(row.value); } catch { savedValues[row.field_key] = row.value; }
-  }
-
-  const attachments = db.prepare('SELECT * FROM attachments WHERE room_id = ?').all(room.id);
-  const attachmentsByField = {};
-  for (const a of attachments) {
-    (attachmentsByField[a.field_key] = attachmentsByField[a.field_key] || []).push(a);
-  }
-
-  // per i campi catalog_select* carichiamo le opzioni disponibili (con eventuale foto)
-  const fields = fieldDefs.map(f => ({
-    ...f,
-    options: f.catalogType ? catalogOptionsFor(f.catalogType) : null,
-  }));
+  const fields = getRoomFields(db, room.room_type);
+  const savedValues = loadSavedValues(db, 'room_fields', 'room_id', room.id);
+  const attachmentsByField = loadAttachmentsByField(db, 'room_id', room.id);
 
   const user = req.session.user || null;
 
@@ -93,8 +70,7 @@ router.post('/rooms/:id/fields', requireWrite, (req, res) => {
   const room = db.prepare('SELECT * FROM rooms WHERE id = ?').get(req.params.id);
   if (!room) return res.status(404).json({ error: 'Stanza non trovata' });
 
-  const fieldDefs = ROOM_FIELDS[room.room_type] || [];
-  const validKeys = new Set(fieldDefs.map(f => f.key));
+  const validKeys = new Set(getRoomFields(db, room.room_type).map(f => f.key));
 
   const upsert = db.prepare(`
     INSERT INTO room_fields (room_id, field_key, value, updated_by, updated_at)
@@ -132,7 +108,7 @@ router.post('/rooms/:id/upload', requireWrite, upload.single('file'), (req, res)
   res.json({ ok: true, path: filePath, original_name: req.file.originalname });
 });
 
-// ---------- Eliminazione allegato (editor/admin) ----------
+// ---------- Eliminazione allegato di una stanza (editor/admin) ----------
 router.post('/rooms/:id/attachments/:attachmentId/delete', requireWrite, (req, res) => {
   const attachment = db.prepare('SELECT * FROM attachments WHERE id = ? AND room_id = ?')
     .get(req.params.attachmentId, req.params.id);
