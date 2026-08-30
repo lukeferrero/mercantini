@@ -18,6 +18,15 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Finché db.ready non si risolve (o se fallisce), risponde subito con un
+// messaggio chiaro invece di lasciare le richieste in attesa di una
+// connessione al database che potrebbe non arrivare mai.
+app.use((req, res, next) => {
+  db.ready
+    .then(() => next())
+    .catch(() => res.status(503).send('Database non disponibile: controlla le variabili di connessione (DATABASE_URL o DB_HOST/DB_USER/DB_PASSWORD/DB_NAME) e riprova.'));
+});
+
 function sessionStoreOptions() {
   if (process.env.DATABASE_URL) {
     // express-mysql-session non legge le connection string: le scompongo.
@@ -72,14 +81,16 @@ app.use((err, req, res, next) => {
   res.status(500).render('error', { message: 'Si è verificato un errore imprevisto.' });
 });
 
-// Attende che schema, seed e utente admin siano pronti prima di accettare richieste.
+// IMPORTANTE: listen() viene chiamato subito, senza aspettare il database.
+// Hostinger richiede che l'app chiami listen() entro pochi secondi dall'avvio,
+// e un database lento/irraggiungibile non deve far sembrare l'app "non partita"
+// (mascherando così il vero errore di connessione nei log).
+app.listen(PORT, () => {
+  console.log(`Reno Manager avviato su http://localhost:${PORT}`);
+});
+
 db.ready
-  .then(() => {
-    app.listen(PORT, () => {
-      console.log(`Reno Manager avviato su http://localhost:${PORT}`);
-    });
-  })
+  .then(() => console.log('[init] Database pronto: le richieste verranno servite normalmente.'))
   .catch((err) => {
-    console.error('[init] Avvio fallito:', err);
-    process.exit(1);
+    console.error('[init] Inizializzazione database fallita:', err.message);
   });
