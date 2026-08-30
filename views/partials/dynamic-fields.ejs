@@ -15,16 +15,20 @@ function noteHtml(value, canEdit, inputName, placeholder) {
 
 // Renderizza il selettore di un'opzione di catalogo: griglia di card con immagine a fianco del nome
 // (modificabile), oppure solo il valore scelto con la sua immagine (sola lettura).
+function fornitoreTag(fornitore) {
+  return fornitore ? ` <span class="option-fornitore">(${escapeHtml(fornitore)})</span>` : '';
+}
+
 function pickerHtml(options, value, canEdit, inputName, optional) {
-  let allOptions = (options || []).map(o => ({ id: o.id, label: o.label, photo_path: o.photo_path }));
-  if (optional) allOptions = [{ id: '__none__', label: 'Non presente', photo_path: null }, ...allOptions];
+  let allOptions = (options || []).map(o => ({ id: o.id, label: o.label, photo_path: o.photo_path, fornitore: o.fornitore }));
+  if (optional) allOptions = [{ id: '__none__', label: 'Non presente', photo_path: null, fornitore: null }, ...allOptions];
 
   if (!canEdit) {
     const selected = allOptions.find(o => String(o.id) === String(value));
     if (!selected) return '<p class="muted">Non specificato</p>';
     let html = '<div class="option-pick-row selected-only">';
     if (selected.photo_path) html += `<img class="option-thumb" src="${selected.photo_path}" alt="">`;
-    html += `<span>${escapeHtml(selected.label)}</span></div>`;
+    html += `<span>${escapeHtml(selected.label)}${fornitoreTag(selected.fornitore)}</span></div>`;
     return html;
   }
 
@@ -38,7 +42,7 @@ function pickerHtml(options, value, canEdit, inputName, optional) {
     const isSelected = String(value) === String(o.id);
     html += `<div class="option-pick-card${isSelected ? ' selected' : ''}" data-value="${escapeHtml(o.id)}">`;
     html += o.photo_path ? `<img class="option-thumb" src="${o.photo_path}" alt="">` : `<div class="option-thumb placeholder">–</div>`;
-    html += `<span>${escapeHtml(o.label)}</span></div>`;
+    html += `<span>${escapeHtml(o.label)}${fornitoreTag(o.fornitore)}</span></div>`;
   });
   html += `<input type="hidden" name="${inputName}" value="${escapeHtml(value)}"></div>`;
   return html;

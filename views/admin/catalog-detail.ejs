@@ -10,6 +10,7 @@
   <form method="POST" action="/admin/catalog/<%= catalogItem.type %>/options" enctype="multipart/form-data">
     <div class="form-row inline">
       <input type="text" name="label" placeholder="Nome opzione" required style="flex:2">
+      <input type="text" name="fornitore" placeholder="Fornitore" style="flex:1">
       <input type="file" name="photo" accept="image/*" style="flex:1">
       <button class="btn" type="submit">Aggiungi</button>
     </div>
@@ -22,8 +23,10 @@
     <% options.forEach(o => { %>
       <div class="option-card">
         <% if (o.photo_path) { %><img class="option-thumb" src="<%= o.photo_path %>" alt="<%= o.label %>"><% } %>
+        <div style="font-size:13px;margin-top:4px;"><%= o.label %><% if (o.fornitore) { %> <span class="option-fornitore">(<%= o.fornitore %>)</span><% } %></div>
         <form method="POST" action="/admin/catalog/options/<%= o.id %>" enctype="multipart/form-data" style="margin-top:6px;">
-          <input type="text" name="label" value="<%= o.label %>" style="margin-bottom:6px;font-size:13px;padding:5px 8px;">
+          <input type="text" name="label" value="<%= o.label %>" placeholder="Nome opzione" style="margin-bottom:6px;font-size:13px;padding:5px 8px;">
+          <input type="text" name="fornitore" value="<%= o.fornitore || '' %>" placeholder="Fornitore" style="margin-bottom:6px;font-size:13px;padding:5px 8px;">
           <input type="file" name="photo" accept="image/*" style="margin-bottom:6px;font-size:12px;">
           <button class="btn secondary" type="submit" style="padding:3px 8px;font-size:11px;width:100%;">Salva modifiche</button>
         </form>

@@ -1,19 +1,18 @@
 {
   "name": "reno-manager",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Gestione ristrutturazione appartamenti - backend + frontend",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "seed": "node db/init.js"
+    "start": "node server.js"
   },
   "dependencies": {
-    "better-sqlite3": "^11.3.0",
     "bcrypt": "^5.1.1",
-    "connect-sqlite3": "^0.9.15",
     "ejs": "^3.1.10",
     "express": "^4.21.0",
+    "express-mysql-session": "^3.0.3",
     "express-session": "^1.18.0",
-    "multer": "^2.0.1"
+    "multer": "^2.0.1",
+    "mysql2": "^3.11.3"
   }
 }
