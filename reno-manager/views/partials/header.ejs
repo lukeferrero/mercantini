@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= typeof title !== 'undefined' ? title : 'Reno Manager' %></title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<% var currentUser = (typeof user !== 'undefined') ? user : null; %>
+<header class="topbar">
+  <div>
+    <% if (currentUser && currentUser.role === 'admin') { %>
+      <a href="/admin">Backend</a>
+      <a href="/admin/room-types">Tipi di stanza</a>
+      <a href="/admin/unit-fields">Caratteristiche unità</a>
+      <a href="/admin/users">Utenti</a>
+      <a href="/admin/catalog">Catalogo</a>
+    <% } %>
+    <a href="/app">Frontend</a>
+  </div>
+  <div>
+    <% if (currentUser) { %>
+      <%= currentUser.name %> <span class="role-badge"><%= currentUser.role %></span>
+      <form action="/logout" method="POST" style="display:inline">
+        <button class="btn secondary" style="margin-left:10px;padding:4px 10px;font-size:12px;">Esci</button>
+      </form>
+    <% } else { %>
+      <a href="/login" style="color:#fff;">Accedi per modificare</a>
+    <% } %>
+  </div>
+</header>
+<div class="container">

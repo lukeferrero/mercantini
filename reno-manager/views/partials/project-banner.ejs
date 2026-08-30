@@ -1,0 +1,8 @@
+<% if (typeof project !== 'undefined' && project) { %>
+<div class="project-banner">
+  <% if (project.image_path) { %>
+    <img src="<%= project.image_path %>" alt="<%= project.name %>" class="project-banner-img">
+  <% } %>
+  <span class="project-banner-name"><%= project.name %></span>
+</div>
+<% } %>

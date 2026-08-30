@@ -1,0 +1,24 @@
+<%- include('../partials/header', { title: room.name, user }) %>
+<%- include('../partials/project-banner', { project }) %>
+
+<p><a href="/app/units/<%= room.unit_id %>">&larr; Torna all'unità</a></p>
+<h1><%= room.name %> <span class="badge"><%= room.room_type %></span></h1>
+<% if (!canEdit) { %><p><em>Stai visualizzando in sola lettura. <a href="/login">Accedi</a> per modificare.</em></p><% } %>
+
+<form id="dynamic-form">
+  <%- include('../partials/dynamic-fields', { fields, savedValues, attachmentsByField, canEdit }) %>
+
+  <% if (canEdit) { %>
+    <button type="submit" class="btn">Salva tutto</button>
+    <span class="save-status" id="save-status"></span>
+  <% } %>
+</form>
+
+<script>
+  window.SAVE_URL = '/app/rooms/<%= room.id %>/fields';
+  window.UPLOAD_URL = '/app/rooms/<%= room.id %>/upload';
+  window.DELETE_ATTACHMENT_URL_BASE = '/app/rooms/<%= room.id %>/attachments';
+</script>
+<script src="/js/dynamic-fields.js"></script>
+
+<%- include('../partials/footer') %>

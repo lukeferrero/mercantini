@@ -1,0 +1,79 @@
+<%- include('../partials/header', { title: scopeLabel, user: typeof user !== 'undefined' ? user : null }) %>
+
+<p><a href="<%= backLink %>">&larr; Indietro</a></p>
+<h1><%= scopeLabel %></h1>
+
+<div class="card">
+  <h2>Nuovo campo</h2>
+  <form method="POST" action="<%= formAction %>">
+    <div class="form-row inline">
+      <div style="flex:2"><label>Nome campo</label><input type="text" name="label" placeholder="es. Presa dati" required></div>
+      <div style="flex:1">
+        <label>Tipo di controllo</label>
+        <select name="field_type" id="field_type_select" required>
+          <% fieldTypes.forEach(t => { %>
+            <option value="<%= t.value %>" data-needs-catalog="<%= t.needsCatalog ? '1' : '0' %>"><%= t.label %></option>
+          <% }) %>
+        </select>
+      </div>
+    </div>
+    <div class="form-row inline" id="catalog_picker_row">
+      <div style="flex:1">
+        <label>Catalogo opzioni esistente</label>
+        <select name="catalog_type">
+          <option value="">-- nessuno / crea nuovo --</option>
+          <% catalogTypes.forEach(c => { %>
+            <option value="<%= c.type %>"><%= c.label %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div style="flex:1">
+        <label>...oppure crea nuovo catalogo</label>
+        <input type="text" name="new_catalog_label" placeholder="es. Prese elettriche">
+      </div>
+    </div>
+    <div class="form-row inline" id="unit_row">
+      <div style="flex:1">
+        <label>Unità di misura (opzionale, solo per campi numerici)</label>
+        <input type="text" name="field_unit" placeholder="es. cm">
+      </div>
+    </div>
+    <button class="btn" type="submit">Aggiungi campo</button>
+  </form>
+</div>
+
+<div class="card">
+  <table>
+    <thead><tr><th>Campo</th><th>Chiave</th><th>Tipo di controllo</th><th>Catalogo</th><th></th></tr></thead>
+    <tbody>
+      <% fields.forEach(f => { %>
+      <tr>
+        <td><%= f.label %></td>
+        <td><span class="badge"><%= f.slug %></span></td>
+        <td><%= (fieldTypes.find(t => t.value === f.field_type) || {}).label || f.field_type %></td>
+        <td><%= f.catalog_type || '-' %></td>
+        <td>
+          <form method="POST" action="/admin/fields/<%= f.id %>/delete" onsubmit="return confirm('Eliminare questo campo? I valori già salvati per questo campo andranno persi.')" style="display:inline">
+            <button class="btn danger" style="padding:4px 10px;font-size:12px;">Elimina</button>
+          </form>
+        </td>
+      </tr>
+      <% }) %>
+      <% if (fields.length === 0) { %><tr><td colspan="5">Nessun campo ancora.</td></tr><% } %>
+    </tbody>
+  </table>
+</div>
+
+<script>
+  // Mostra il selettore di catalogo solo per i tipi di campo che lo richiedono
+  var sel = document.getElementById('field_type_select');
+  var catalogRow = document.getElementById('catalog_picker_row');
+  function syncCatalogRow() {
+    var opt = sel.options[sel.selectedIndex];
+    catalogRow.style.display = opt && opt.dataset.needsCatalog === '1' ? 'flex' : 'none';
+  }
+  sel.addEventListener('change', syncCatalogRow);
+  syncCatalogRow();
+</script>
+
+<%- include('../partials/footer') %>

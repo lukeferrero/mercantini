@@ -1,0 +1,77 @@
+<%- include('../partials/header', { title: unit.name, user: typeof user !== 'undefined' ? user : null }) %>
+<%- include('../partials/project-banner', { project }) %>
+
+<p><a href="/admin/projects/<%= unit.project_id %>">&larr; Torna al progetto</a></p>
+<h1><%= unit.name %></h1>
+
+<div class="card">
+  <h2>Dati generali</h2>
+  <form method="POST" action="/admin/units/<%= unit.id %>">
+    <div class="form-row inline">
+      <div style="flex:2"><label>Nome</label><input type="text" name="name" value="<%= unit.name %>" required></div>
+      <div style="flex:1"><label>mq</label><input type="number" step="0.01" name="mq" value="<%= unit.mq || '' %>"></div>
+    </div>
+    <button class="btn" type="submit">Salva</button>
+  </form>
+</div>
+
+<div class="card">
+  <h2>Caratteristiche unità</h2>
+  <p><a href="/admin/unit-fields">Gestisci i campi disponibili &rarr;</a></p>
+
+  <% if (fields.length === 0) { %>
+    <p class="muted">Nessuna caratteristica configurata ancora. <a href="/admin/unit-fields">Aggiungine una</a>.</p>
+  <% } else { %>
+    <form id="dynamic-form">
+      <%- include('../partials/dynamic-fields', { fields, savedValues, attachmentsByField, canEdit: true }) %>
+      <button type="submit" class="btn">Salva caratteristiche</button>
+      <span class="save-status" id="save-status"></span>
+    </form>
+    <script>
+      window.SAVE_URL = '/admin/units/<%= unit.id %>/fields';
+      window.UPLOAD_URL = '/admin/units/<%= unit.id %>/upload';
+      window.DELETE_ATTACHMENT_URL_BASE = '/admin/units/<%= unit.id %>/attachments';
+    </script>
+    <script src="/js/dynamic-fields.js"></script>
+  <% } %>
+</div>
+
+<div class="card">
+  <h2>Nuova stanza</h2>
+  <form method="POST" action="/admin/units/<%= unit.id %>/rooms">
+    <div class="form-row inline">
+      <input type="text" name="name" placeholder="Nome stanza (es. Bagno principale)" required style="flex:2">
+      <select name="room_type" required style="flex:1">
+        <option value="">Tipo stanza</option>
+        <% roomTypes.forEach(rt => { %>
+          <option value="<%= rt.slug %>"><%= rt.label %></option>
+        <% }) %>
+      </select>
+      <button class="btn" type="submit">Aggiungi</button>
+    </div>
+  </form>
+  <p><a href="/admin/room-types">Gestisci tipi di stanza &rarr;</a></p>
+</div>
+
+<div class="card">
+  <h2>Stanze</h2>
+  <table>
+    <thead><tr><th>Nome</th><th>Tipo</th><th></th></tr></thead>
+    <tbody>
+      <% rooms.forEach(r => { %>
+      <tr>
+        <td><a href="/app/rooms/<%= r.id %>"><%= r.name %></a></td>
+        <td><span class="badge"><%= r.room_type %></span></td>
+        <td>
+          <form method="POST" action="/admin/rooms/<%= r.id %>/delete" onsubmit="return confirm('Eliminare questa stanza?')" style="display:inline">
+            <button class="btn danger" style="padding:4px 10px;font-size:12px;">Elimina</button>
+          </form>
+        </td>
+      </tr>
+      <% }) %>
+      <% if (rooms.length === 0) { %><tr><td colspan="3">Nessuna stanza ancora.</td></tr><% } %>
+    </tbody>
+  </table>
+</div>
+
+<%- include('../partials/footer') %>
