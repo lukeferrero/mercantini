@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS projects (
   name VARCHAR(255) NOT NULL,
   units_count INT NOT NULL DEFAULT 0,
   image_path VARCHAR(500),
+  note TEXT,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -123,6 +124,7 @@ CREATE TABLE IF NOT EXISTS attachments (
   id INT AUTO_INCREMENT PRIMARY KEY,
   room_id INT,
   unit_id INT,
+  project_id INT,
   field_key VARCHAR(150),
   kind ENUM('photo','pdf','file') NOT NULL,
   file_path VARCHAR(500) NOT NULL,
@@ -131,7 +133,15 @@ CREATE TABLE IF NOT EXISTS attachments (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   KEY idx_attachments_room (room_id),
   KEY idx_attachments_unit (unit_id),
+  KEY idx_attachments_project (project_id),
   CONSTRAINT fk_attachments_room FOREIGN KEY (room_id) REFERENCES rooms(id) ON DELETE CASCADE,
   CONSTRAINT fk_attachments_unit FOREIGN KEY (unit_id) REFERENCES units(id) ON DELETE CASCADE,
+  CONSTRAINT fk_attachments_project FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
   CONSTRAINT fk_attachments_user FOREIGN KEY (uploaded_by) REFERENCES users(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Registro delle migrazioni di dati già applicate (ognuna gira una sola volta per database)
+CREATE TABLE IF NOT EXISTS schema_migrations (
+  name VARCHAR(100) NOT NULL PRIMARY KEY,
+  applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

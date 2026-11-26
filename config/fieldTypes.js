@@ -17,4 +17,7 @@ module.exports = [
   { value: 'bool_note_pdf', label: 'Sì/No + note + PDF', needsCatalog: false },
   { value: 'count_or_none_pdf', label: 'Numero oppure "non presente" + PDF', needsCatalog: false },
   { value: 'attachments', label: 'Allegati liberi (foto/file multipli)', needsCatalog: false },
+  { value: 'attachment', label: 'Allegato singolo (un solo file)', needsCatalog: false },
+  { value: 'date', label: 'Data', needsCatalog: false },
+  { value: 'section', label: 'Titolo di sezione (solo intestazione, nessun valore)', needsCatalog: false },
 ];

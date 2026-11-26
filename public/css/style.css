@@ -131,3 +131,16 @@ textarea.autosize { overflow: hidden; resize: none; min-height: 44px; }
 
 /* Fornitore di un'opzione di catalogo, mostrato a fianco del nome */
 .option-fornitore { color: #6b7280; font-size: 12px; margin-left: 4px; }
+
+/* Titoli di sezione nelle caratteristiche unità */
+.field-section-title { margin: 26px 0 12px; padding-bottom: 6px; border-bottom: 2px solid #d1d5db; font-size: 17px; color: #111827; }
+.field-section-title:first-child { margin-top: 0; }
+tr.section-row td { background: #eef2ff; font-weight: 600; }
+
+/* Documenti di progetto */
+.project-doc-row { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f0f0f0; }
+.project-doc-label { min-width: 220px; font-size: 14px; }
+.project-doc-upload { display: flex; align-items: center; gap: 8px; margin: 0; }
+details.project-docs { margin: 4px 0 14px; }
+details.project-docs summary { cursor: pointer; font-weight: 600; margin-bottom: 6px; }
+a.btn.secondary { text-decoration: none; display: inline-block; }

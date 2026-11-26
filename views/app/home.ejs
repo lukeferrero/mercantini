@@ -5,6 +5,27 @@
 <% projects.forEach(p => { %>
 <div class="card">
   <h2><%= p.name %></h2>
+  <%
+    const filledDocs = docSlots.filter(s => docsByProject[p.id][s.key]);
+    const hasNote = p.note && p.note.trim() !== '';
+  %>
+  <% if (filledDocs.length > 0 || hasNote) { %>
+  <details class="project-docs">
+    <summary>Documenti e note del progetto</summary>
+    <% filledDocs.forEach(s => { const d = docsByProject[p.id][s.key]; %>
+      <div class="project-doc-row">
+        <strong class="project-doc-label"><%= s.label %></strong>
+        <a href="<%= d.file_path %>" download="<%= d.original_name %>" class="badge">📎 <%= d.original_name %></a>
+      </div>
+    <% }) %>
+    <% if (hasNote) { %>
+      <div class="project-doc-row" style="display:block;">
+        <strong class="project-doc-label">Note</strong>
+        <div class="note-display" style="margin-top:6px;"><%= p.note %></div>
+      </div>
+    <% } %>
+  </details>
+  <% } %>
   <table>
     <thead><tr><th>Unità</th><th>mq</th></tr></thead>
     <tbody>

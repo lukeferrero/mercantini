@@ -44,22 +44,33 @@
 
 <div class="card">
   <table>
-    <thead><tr><th>Campo</th><th>Chiave</th><th>Tipo di controllo</th><th>Catalogo</th><th></th></tr></thead>
+    <thead><tr><th>Ordine</th><th>Campo</th><th>Chiave</th><th>Tipo di controllo</th><th>Catalogo</th><th></th></tr></thead>
     <tbody>
-      <% fields.forEach(f => { %>
-      <tr>
+      <% fields.forEach((f, i) => { %>
+      <tr id="field-<%= f.id %>" <%- f.field_type === 'section' ? 'class="section-row"' : '' %>>
+        <td style="white-space:nowrap;">
+          <form method="POST" action="/admin/fields/<%= f.id %>/move" style="display:inline">
+            <input type="hidden" name="direction" value="up">
+            <button class="btn secondary" style="padding:2px 8px;font-size:12px;" title="Sposta su" <%= i === 0 ? 'disabled' : '' %>>▲</button>
+          </form>
+          <form method="POST" action="/admin/fields/<%= f.id %>/move" style="display:inline">
+            <input type="hidden" name="direction" value="down">
+            <button class="btn secondary" style="padding:2px 8px;font-size:12px;" title="Sposta giù" <%= i === fields.length - 1 ? 'disabled' : '' %>>▼</button>
+          </form>
+        </td>
         <td><%= f.label %></td>
         <td><span class="badge"><%= f.slug %></span></td>
         <td><%= (fieldTypes.find(t => t.value === f.field_type) || {}).label || f.field_type %></td>
         <td><%= f.catalog_type || '-' %></td>
-        <td>
+        <td style="white-space:nowrap;">
+          <a class="btn secondary" href="/admin/fields/<%= f.id %>/edit" style="padding:4px 10px;font-size:12px;">Modifica</a>
           <form method="POST" action="/admin/fields/<%= f.id %>/delete" onsubmit="return confirm('Eliminare questo campo? I valori già salvati per questo campo andranno persi.')" style="display:inline">
             <button class="btn danger" style="padding:4px 10px;font-size:12px;">Elimina</button>
           </form>
         </td>
       </tr>
       <% }) %>
-      <% if (fields.length === 0) { %><tr><td colspan="5">Nessun campo ancora.</td></tr><% } %>
+      <% if (fields.length === 0) { %><tr><td colspan="6">Nessun campo ancora.</td></tr><% } %>
     </tbody>
   </table>
 </div>

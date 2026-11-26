@@ -47,12 +47,48 @@ function pickerHtml(options, value, canEdit, inputName, optional) {
   html += `<input type="hidden" name="${inputName}" value="${escapeHtml(value)}"></div>`;
   return html;
 }
+
+// Un valore è "compilato" se è una stringa non vuota, oppure un oggetto con almeno una proprietà compilata.
+function isFilledValue(v) {
+  if (v == null) return false;
+  if (typeof v === 'object') return Object.keys(v).some(k => isFilledValue(v[k]));
+  return String(v).trim() !== '';
+}
+
+const attsMap = (typeof attachmentsByField !== 'undefined' && attachmentsByField) || {};
+
+function isFieldFilled(f) {
+  if (f.type === 'section') return false;
+  const hasAtts = (attsMap[f.key] || []).length > 0;
+  return hasAtts || isFilledValue(savedValues[f.key]);
+}
+
+// Nella vista di sola lettura si mostrano solo i campi compilati; un titolo di sezione compare
+// solo se sotto di esso c'è almeno un campo compilato.
+let visibleFields = fields;
+if (!canEdit) {
+  visibleFields = [];
+  let pendingSection = null;
+  fields.forEach(f => {
+    if (f.type === 'section') { pendingSection = f; return; }
+    if (!isFieldFilled(f)) return;
+    if (pendingSection) { visibleFields.push(pendingSection); pendingSection = null; }
+    visibleFields.push(f);
+  });
+}
 %>
-<% fields.forEach(f => {
+<% if (!canEdit && visibleFields.length === 0) { %>
+  <p class="muted">Nessun dato inserito.</p>
+<% } %>
+<% visibleFields.forEach(f => {
+     if (f.type === 'section') { %>
+<h3 class="field-section-title"><%= f.label %></h3>
+<%   return;
+     }
      const val = savedValues[f.key];
-     const atts = (typeof attachmentsByField !== 'undefined' && attachmentsByField[f.key]) || [];
+     const atts = attsMap[f.key] || [];
 %>
-<div class="field-group" data-key="<%= f.key %>" data-type="<%= f.type %>">
+<div class="field-group" id="field-<%= f.key %>" data-key="<%= f.key %>" data-type="<%= f.type %>">
   <h4><%= f.label %></h4>
 
   <% if (f.type === 'catalog_select' || f.type === 'catalog_select_optional') { %>
@@ -143,6 +179,20 @@ function pickerHtml(options, value, canEdit, inputName, optional) {
       <p><%= (val && val.value) || '—' %></p>
     <% } %>
     <% if (canEdit) { %><input type="file" accept="application/pdf" class="single-upload" data-key="<%= f.key %>" data-kind="pdf" style="margin-top:6px;"><% } %>
+
+  <% } else if (f.type === 'date') { %>
+    <% if (canEdit) { %>
+      <input type="date" name="f_<%= f.key %>" value="<%= val || '' %>">
+    <% } else { %>
+      <p><%= /^\d{4}-\d{2}-\d{2}$/.test(val || '') ? val.split('-').reverse().join('/') : val %></p>
+    <% } %>
+
+  <% } else if (f.type === 'attachment') { %>
+    <% if (canEdit && atts.length === 0) { %>
+      <input type="file" class="single-upload" data-key="<%= f.key %>" data-kind="file">
+    <% } else if (canEdit) { %>
+      <p class="muted" style="margin:0 0 4px;">Per sostituire il file, eliminalo e caricane uno nuovo.</p>
+    <% } %>
 
   <% } else if (f.type === 'attachments') { %>
     <% if (canEdit) { %>

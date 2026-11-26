@@ -23,6 +23,35 @@
 </div>
 
 <div class="card">
+  <h2>Documenti del progetto</h2>
+  <p class="muted" style="margin-top:-6px;margin-bottom:12px;">Un file per voce. Per sostituirlo, eliminalo e caricane uno nuovo. Le voci compilate sono visibili anche nella pagina pubblica.</p>
+  <% docSlots.forEach(slot => { const doc = docsByKey[slot.key]; %>
+  <div class="project-doc-row">
+    <strong class="project-doc-label"><%= slot.label %></strong>
+    <% if (doc) { %>
+      <a href="<%= doc.file_path %>" download="<%= doc.original_name %>" class="badge">📎 <%= doc.original_name %></a>
+      <form method="POST" action="/admin/projects/<%= project.id %>/docs/<%= doc.id %>/delete" onsubmit="return confirm('Eliminare questo documento?')" style="display:inline">
+        <button class="btn danger" style="padding:2px 10px;font-size:12px;">Elimina</button>
+      </form>
+    <% } else { %>
+      <form method="POST" action="/admin/projects/<%= project.id %>/docs/<%= slot.key %>" enctype="multipart/form-data" class="project-doc-upload">
+        <input type="file" name="file" required>
+        <button class="btn" type="submit" style="padding:4px 12px;font-size:13px;">Carica</button>
+      </form>
+    <% } %>
+  </div>
+  <% }) %>
+</div>
+
+<div class="card">
+  <h2>Note del progetto</h2>
+  <form method="POST" action="/admin/projects/<%= project.id %>/note">
+    <textarea class="autosize" name="note" rows="4" placeholder="Note"><%= project.note || '' %></textarea>
+    <button class="btn" type="submit" style="margin-top:8px;">Salva note</button>
+  </form>
+</div>
+
+<div class="card">
   <h2>Nuova unità immobiliare</h2>
   <form method="POST" action="/admin/projects/<%= project.id %>/units">
     <div class="form-row inline">

@@ -6,9 +6,8 @@
 
 <div class="card">
   <h2>Caratteristiche unità</h2>
-  <p><strong>mq:</strong> <%= unit.mq || '-' %></p>
+  <% if (unit.mq) { %><p><strong>mq:</strong> <%= unit.mq %></p><% } %>
   <%- include('../partials/dynamic-fields', { fields, savedValues, attachmentsByField, canEdit: false }) %>
-  <% if (fields.length === 0) { %><p class="muted">Nessuna caratteristica configurata.</p><% } %>
 </div>
 
 <div class="card">
