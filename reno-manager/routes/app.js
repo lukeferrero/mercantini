@@ -4,7 +4,8 @@ const fs = require('fs');
 const multer = require('multer');
 const db = require('../db/init');
 const { getRoomFields, getUnitFields, loadSavedValues, loadAttachmentsByField } = require('../services/fields');
-const { getProjectForUnit, getProjectForRoom } = require('../services/projects');
+const { getProjectForUnit, getProjectForRoom, getProjectDocs } = require('../services/projects');
+const PROJECT_DOCS = require('../config/projectDocs');
 const { requireWrite } = require('../middleware/auth');
 const asyncHandler = require('../middleware/asyncHandler');
 
@@ -27,11 +28,13 @@ const upload = multer({
 router.get('/', asyncHandler(async (req, res) => {
   const [projects] = await db.query('SELECT * FROM projects ORDER BY created_at DESC');
   const unitsByProject = {};
+  const docsByProject = {};
   for (const p of projects) {
     const [units] = await db.query('SELECT * FROM units WHERE project_id = ? ORDER BY id', [p.id]);
     unitsByProject[p.id] = units;
+    docsByProject[p.id] = await getProjectDocs(db, p.id);
   }
-  res.render('app/home', { projects, unitsByProject, user: req.session.user || null });
+  res.render('app/home', { projects, unitsByProject, docsByProject, docSlots: PROJECT_DOCS, user: req.session.user || null });
 }));
 
 // ---------- Dettaglio unità ----------

@@ -97,7 +97,10 @@
       try {
         const res = await fetch(`${window.DELETE_ATTACHMENT_URL_BASE}/${id}/delete`, { method: 'POST' });
         if (!res.ok) throw new Error('Errore eliminazione');
+        const group = btn.closest('.field-group');
         btn.closest('.attachment-row').remove();
+        // Per gli allegati singoli si ricarica la pagina, così riappare il pulsante di caricamento
+        if (group && group.dataset.type === 'attachment') location.reload();
       } catch (err) {
         alert('Errore durante l\'eliminazione dell\'allegato');
       }

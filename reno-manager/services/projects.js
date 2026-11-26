@@ -21,4 +21,16 @@ async function getProjectForRoom(db, roomId) {
   return project || null;
 }
 
-module.exports = { getProjectForUnit, getProjectForRoom };
+// Documenti allegati al progetto, indicizzati per field_key (config/projectDocs.js).
+// Se per la stessa voce esistessero più file, vale il più recente.
+async function getProjectDocs(db, projectId) {
+  const [rows] = await db.query(
+    'SELECT * FROM attachments WHERE project_id = ? ORDER BY id',
+    [projectId]
+  );
+  const byKey = {};
+  rows.forEach(r => { byKey[r.field_key] = r; });
+  return byKey;
+}
+
+module.exports = { getProjectForUnit, getProjectForRoom, getProjectDocs };

@@ -1,0 +1,60 @@
+<%- include('../partials/header', { title: 'Modifica campo', user: typeof user !== 'undefined' ? user : null }) %>
+
+<p><a href="<%= backLink %>">&larr; Indietro</a></p>
+<h1>Modifica campo</h1>
+
+<div class="card">
+  <p class="muted" style="margin-top:0;">
+    Chiave interna: <span class="badge"><%= field.slug %></span> &mdash; non cambia, quindi i valori già inseriti restano collegati al campo.
+    Se cambi il tipo di controllo, i valori già salvati restano nel database ma potrebbero non essere più visualizzati correttamente.
+  </p>
+  <form method="POST" action="/admin/fields/<%= field.id %>/edit">
+    <div class="form-row inline">
+      <div style="flex:2"><label>Nome campo</label><input type="text" name="label" value="<%= field.label %>" required></div>
+      <div style="flex:1">
+        <label>Tipo di controllo</label>
+        <select name="field_type" id="field_type_select" required>
+          <% fieldTypes.forEach(t => { %>
+            <option value="<%= t.value %>" data-needs-catalog="<%= t.needsCatalog ? '1' : '0' %>" <%= t.value === field.field_type ? 'selected' : '' %>><%= t.label %></option>
+          <% }) %>
+        </select>
+      </div>
+    </div>
+    <div class="form-row inline" id="catalog_picker_row">
+      <div style="flex:1">
+        <label>Catalogo opzioni</label>
+        <select name="catalog_type">
+          <option value="">-- nessuno / crea nuovo --</option>
+          <% catalogTypes.forEach(c => { %>
+            <option value="<%= c.type %>" <%= c.type === field.catalog_type ? 'selected' : '' %>><%= c.label %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div style="flex:1">
+        <label>...oppure crea nuovo catalogo</label>
+        <input type="text" name="new_catalog_label" placeholder="es. Prese elettriche">
+      </div>
+    </div>
+    <div class="form-row inline">
+      <div style="flex:1">
+        <label>Unità di misura (opzionale, solo per campi numerici)</label>
+        <input type="text" name="field_unit" value="<%= field.field_unit || '' %>" placeholder="es. cm">
+      </div>
+    </div>
+    <button class="btn" type="submit">Salva modifiche</button>
+    <a class="btn secondary" href="<%= backLink %>">Annulla</a>
+  </form>
+</div>
+
+<script>
+  var sel = document.getElementById('field_type_select');
+  var catalogRow = document.getElementById('catalog_picker_row');
+  function syncCatalogRow() {
+    var opt = sel.options[sel.selectedIndex];
+    catalogRow.style.display = opt && opt.dataset.needsCatalog === '1' ? 'flex' : 'none';
+  }
+  sel.addEventListener('change', syncCatalogRow);
+  syncCatalogRow();
+</script>
+
+<%- include('../partials/footer') %>

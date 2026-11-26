@@ -7,7 +7,8 @@ const db = require('../db/init');
 const FIELD_TYPES = require('../config/fieldTypes');
 const CATALOG_ITEMS = require('../config/itemCatalog'); // solo per MAX_OPTIONS
 const { getUnitFields, loadSavedValues, loadAttachmentsByField } = require('../services/fields');
-const { getProjectForUnit } = require('../services/projects');
+const { getProjectForUnit, getProjectDocs } = require('../services/projects');
+const PROJECT_DOCS = require('../config/projectDocs');
 const { requireRole } = require('../middleware/auth');
 const asyncHandler = require('../middleware/asyncHandler');
 
@@ -22,7 +23,7 @@ const upload = multer({
       cb(null, unique + path.extname(file.originalname));
     },
   }),
-  limits: { fileSize: 15 * 1024 * 1024 },
+  limits: { fileSize: 30 * 1024 * 1024 },
 });
 
 function slugify(str) {
@@ -50,7 +51,8 @@ router.get('/projects/:id', asyncHandler(async (req, res) => {
   const [[project]] = await db.query('SELECT * FROM projects WHERE id = ?', [req.params.id]);
   if (!project) return res.status(404).render('error', { message: 'Progetto non trovato' });
   const [units] = await db.query('SELECT * FROM units WHERE project_id = ? ORDER BY id', [project.id]);
-  res.render('admin/project', { project, units });
+  const docsByKey = await getProjectDocs(db, project.id);
+  res.render('admin/project', { project, units, docSlots: PROJECT_DOCS, docsByKey });
 }));
 
 router.post('/projects/:id/delete', asyncHandler(async (req, res) => {
@@ -69,6 +71,43 @@ router.post('/projects/:id/image', upload.single('image'), asyncHandler(async (r
 
 router.post('/projects/:id/image/delete', asyncHandler(async (req, res) => {
   await db.query('UPDATE projects SET image_path = NULL WHERE id = ?', [req.params.id]);
+  res.redirect(`/admin/projects/${req.params.id}`);
+}));
+
+// Documenti del progetto: una voce fissa per file (vedi config/projectDocs.js).
+// Per sostituire un file bisogna prima eliminare quello esistente.
+router.post('/projects/:id/docs/:key', upload.single('file'), asyncHandler(async (req, res) => {
+  const back = `/admin/projects/${req.params.id}`;
+  const slot = PROJECT_DOCS.find(s => s.key === req.params.key);
+  const [[project]] = await db.query('SELECT id FROM projects WHERE id = ?', [req.params.id]);
+  if (!slot || !project || !req.file) {
+    if (req.file) fs.unlink(req.file.path, () => {});
+    return res.redirect(back);
+  }
+  const [[existing]] = await db.query('SELECT id FROM attachments WHERE project_id = ? AND field_key = ?', [project.id, slot.key]);
+  if (existing) {
+    fs.unlink(req.file.path, () => {});
+    return res.redirect(back);
+  }
+  await db.query(
+    'INSERT INTO attachments (project_id, field_key, kind, file_path, original_name, uploaded_by) VALUES (?, ?, ?, ?, ?, ?)',
+    [project.id, slot.key, 'file', '/uploads/' + req.file.filename, req.file.originalname, req.session.user.id]
+  );
+  res.redirect(back);
+}));
+
+router.post('/projects/:id/docs/:attachmentId/delete', asyncHandler(async (req, res) => {
+  const [[attachment]] = await db.query('SELECT * FROM attachments WHERE id = ? AND project_id = ?', [req.params.attachmentId, req.params.id]);
+  if (attachment) {
+    await db.query('DELETE FROM attachments WHERE id = ?', [attachment.id]);
+    const filePath = path.join(__dirname, '..', 'public', attachment.file_path.replace(/^\//, ''));
+    fs.unlink(filePath, () => {});
+  }
+  res.redirect(`/admin/projects/${req.params.id}`);
+}));
+
+router.post('/projects/:id/note', asyncHandler(async (req, res) => {
+  await db.query('UPDATE projects SET note = ? WHERE id = ?', [req.body.note || null, req.params.id]);
   res.redirect(`/admin/projects/${req.params.id}`);
 }));
 
@@ -207,6 +246,20 @@ async function fieldExists(scope, roomTypeKey, slug) {
   return !!row;
 }
 
+// Per i campi "da catalogo": usa il catalogo scelto oppure ne crea uno nuovo al volo.
+async function resolveCatalogType(typeInfo, body) {
+  if (!typeInfo.needsCatalog) return null;
+  let catalogType = body.catalog_type || null;
+  if (!catalogType && body.new_catalog_label) {
+    const newSlug = slugify(body.new_catalog_label);
+    if (newSlug) {
+      await db.query('INSERT IGNORE INTO catalog_types (type, label) VALUES (?, ?)', [newSlug, body.new_catalog_label]);
+      catalogType = newSlug;
+    }
+  }
+  return catalogType;
+}
+
 async function addFieldDefinition(req, res, scope, roomTypeKey, redirectTo) {
   const { label, field_type, catalog_type, new_catalog_label, field_unit } = req.body;
   const slug = slugify(label);
@@ -214,17 +267,7 @@ async function addFieldDefinition(req, res, scope, roomTypeKey, redirectTo) {
   if (!slug || !label || !typeInfo) return res.redirect(redirectTo);
   if (await fieldExists(scope, roomTypeKey, slug)) return res.redirect(redirectTo);
 
-  let catalogType = null;
-  if (typeInfo.needsCatalog) {
-    catalogType = catalog_type || null;
-    if (!catalogType && new_catalog_label) {
-      const newSlug = slugify(new_catalog_label);
-      if (newSlug) {
-        await db.query('INSERT IGNORE INTO catalog_types (type, label) VALUES (?, ?)', [newSlug, new_catalog_label]);
-        catalogType = newSlug;
-      }
-    }
-  }
+  const catalogType = await resolveCatalogType(typeInfo, req.body);
 
   const [[{ c }]] = roomTypeKey == null
     ? await db.query('SELECT COUNT(*) c FROM field_definitions WHERE scope = ? AND room_type_key IS NULL', [scope])
@@ -281,6 +324,56 @@ router.post('/fields/:id/delete', asyncHandler(async (req, res) => {
   await db.query('DELETE FROM field_definitions WHERE id = ?', [req.params.id]);
   const redirectTo = field.scope === 'unit' ? '/admin/unit-fields' : `/admin/room-types/${field.room_type_key}/fields`;
   res.redirect(redirectTo);
+}));
+
+function fieldListUrl(field) {
+  return field.scope === 'unit' ? '/admin/unit-fields' : `/admin/room-types/${field.room_type_key}/fields`;
+}
+
+// Cambia l'ordine di un campo (su/giù) all'interno del suo elenco (stesso tipo di stanza o caratteristiche unità).
+// Riscrive sort_order per tutti i campi dell'elenco, così l'ordine resta coerente anche se i valori erano uguali.
+router.post('/fields/:id/move', asyncHandler(async (req, res) => {
+  const [[field]] = await db.query('SELECT * FROM field_definitions WHERE id = ?', [req.params.id]);
+  if (!field) return res.status(404).render('error', { message: 'Campo non trovato' });
+
+  const [siblings] = field.room_type_key == null
+    ? await db.query('SELECT id FROM field_definitions WHERE scope = ? AND room_type_key IS NULL ORDER BY sort_order, id', [field.scope])
+    : await db.query('SELECT id FROM field_definitions WHERE scope = ? AND room_type_key = ? ORDER BY sort_order, id', [field.scope, field.room_type_key]);
+
+  const ids = siblings.map(s => s.id);
+  const idx = ids.indexOf(field.id);
+  const target = req.body.direction === 'up' ? idx - 1 : idx + 1;
+  if (idx !== -1 && target >= 0 && target < ids.length) {
+    [ids[idx], ids[target]] = [ids[target], ids[idx]];
+  }
+  for (let i = 0; i < ids.length; i++) {
+    await db.query('UPDATE field_definitions SET sort_order = ? WHERE id = ?', [i, ids[i]]);
+  }
+  res.redirect(`${fieldListUrl(field)}#field-${field.id}`);
+}));
+
+// Modifica di un campo esistente. La chiave (slug) resta invariata, così i valori già salvati restano collegati.
+router.get('/fields/:id/edit', asyncHandler(async (req, res) => {
+  const [[field]] = await db.query('SELECT * FROM field_definitions WHERE id = ?', [req.params.id]);
+  if (!field) return res.status(404).render('error', { message: 'Campo non trovato' });
+  const [catalogTypes] = await db.query('SELECT * FROM catalog_types ORDER BY label');
+  res.render('admin/field-edit', { field, fieldTypes: FIELD_TYPES, catalogTypes, backLink: fieldListUrl(field) });
+}));
+
+router.post('/fields/:id/edit', asyncHandler(async (req, res) => {
+  const [[field]] = await db.query('SELECT * FROM field_definitions WHERE id = ?', [req.params.id]);
+  if (!field) return res.status(404).render('error', { message: 'Campo non trovato' });
+
+  const { label, field_type, field_unit } = req.body;
+  const typeInfo = FIELD_TYPES.find(t => t.value === field_type);
+  if (!label || !label.trim() || !typeInfo) return res.redirect(`/admin/fields/${field.id}/edit`);
+
+  const catalogType = await resolveCatalogType(typeInfo, req.body);
+  await db.query(
+    'UPDATE field_definitions SET label = ?, field_type = ?, catalog_type = ?, field_unit = ? WHERE id = ?',
+    [label.trim(), field_type, catalogType, field_unit || null, field.id]
+  );
+  res.redirect(`${fieldListUrl(field)}#field-${field.id}`);
 }));
 
 // ---------- Utenti ----------
